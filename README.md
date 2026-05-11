@@ -1,2 +1,2 @@
-# veraset-data-ckeck
+# veraset-data-check
 The purpose of this project is a quick by-country comparison of the data quality of a mobility dataset

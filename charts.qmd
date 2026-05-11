@@ -1,0 +1,87 @@
+---
+title: "Initial Checks"
+format: html
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(knitr)
+library(ggrepel)
+```
+
+I'm loading a csv file that includes the following variables:
+
+- country: The name of the country\*
+- pings: The average daily number of pings in the dataset during May 2024
+- devices: The average number of devices in the dataset during May 2024
+- pop_k: The estimated population in the country (in thousands) on January 1, 2023\*
+
+\* from https://population.un.org/wpp/downloads?folder=Standard%20Projections&group=Most%20used
+
+I'm going to calculate:
+* The number of pings per device on an average day and
+* The number of devices per thousand people
+
+```{r}
+summary <- here("data.csv") |>
+    read_csv(show_col_types = FALSE) |>
+    mutate(pings_per_device = pings/devices,
+           devices_per_pop_k = devices/pop_k)
+
+head(summary) |>
+    kable()
+```
+
+I'm also going to separate out a few countries of interest.
+
+
+```{r}
+subset_names <- c("Canada",
+                  "United States of America",
+                  "Brazil",
+                  "Germany",
+                  "Sweden",
+                  "Indonesia",
+                  "Republic of Korea",
+                  "Chile",
+                  "Norway",
+                  "France",
+                  "Argentina",
+                  "Singapore",
+                  "Poland",
+                  "Greece",
+                  "Holy See")
+
+subset <- summary |>
+    filter(country %in% subset_names)
+```
+
+Now I'll compare the number of devices per person to the number of pings per device.
+
+
+```{r}
+options(ggrepel.max.overlaps = Inf)
+
+ggplot(summary) +
+    geom_point(aes(x = devices_per_pop_k,
+                   y = pings_per_device),
+               size = 1,
+               alpha = 0.5) +
+    geom_point(data = subset,
+               aes(x = devices_per_pop_k,
+                   y = pings_per_device),
+               color = "darkorange",
+               size = 2) +
+    geom_text_repel(data = subset,
+                    aes(x = devices_per_pop_k,
+                        y = pings_per_device,
+                        label = country),
+                    color = "darkorange") +
+    scale_x_continuous(transform = "log10",
+                       name = "Number of devices per thousand people",
+                       breaks = breaks <- 10^seq(-2, 3, by=1),
+                       labels = formatC(breaks, format = "f", digits = 2)) +
+    scale_y_continuous(transform = "log10") +
+    theme_minimal()
+```
